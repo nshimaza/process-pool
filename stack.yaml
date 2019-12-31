@@ -41,7 +41,7 @@ packages:
 # extra-deps: []
 extra-deps:
 - git: https://github.com/nshimaza/async-supervisor.git
-  commit: 5893f7e22bece133400e8a749856339574a091e2
+  commit: b5bfa8ed02502396b5e077b93486a2a5712270e0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

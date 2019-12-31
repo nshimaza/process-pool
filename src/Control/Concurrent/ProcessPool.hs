@@ -1,3 +1,5 @@
+{-# LANGUAGE Strict #-}
+
 module Control.Concurrent.ProcessPool where
 
 import           Control.Monad
