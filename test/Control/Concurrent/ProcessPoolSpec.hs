@@ -1,14 +1,14 @@
 module Control.Concurrent.ProcessPoolSpec where
 
-import Control.Concurrent.Supervisor hiding (length)
-import Data.Functor
-import Data.Maybe
-import Data.Traversable
-import UnliftIO
-import Test.Hspec
-import Test.Hspec.QuickCheck
-import Test.QuickCheck
-import Control.Concurrent.ProcessPool
+import           Control.Concurrent.ProcessPool
+import           Control.Concurrent.Supervisor  hiding (length)
+import           Data.Functor
+import           Data.Maybe
+import           Data.Traversable
+import           Test.Hspec
+import           Test.Hspec.QuickCheck
+import           Test.QuickCheck
+import           UnliftIO
 
 {-# ANN module "HLint: ignore Reduce duplication" #-}
 

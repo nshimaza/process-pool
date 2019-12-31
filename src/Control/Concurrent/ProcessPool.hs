@@ -4,6 +4,7 @@ import           Control.Monad
 import           Data.Default
 import           Data.Functor
 import           UnliftIO
+import           UnliftIO.Concurrent
 
 import           Control.Concurrent.Supervisor
 
@@ -13,8 +14,8 @@ import           Control.Concurrent.Supervisor
 -}
 data PoolMessage
     = ProcDown ExitReason                                   -- ^ Notification on process termination.
-    | Run (IO ()) (ServerCallback (Maybe (Async ())))       -- ^ Request to run a process.  Returns `Async` on success, `Nothing` on supervisor timeout or pool is full.
-    | RunSync (IO ()) (ServerCallback (Maybe (Async ())))   -- ^ Request to run a process.  Waits for available resource.  Returns `Async` on success, `Nothing` on timeout.
+    | Run (IO ()) (ServerCallback (Maybe ThreadId))         -- ^ Request to run a process.  Returns `ThreadId` on success, `Nothing` on supervisor timeout or pool is full.
+    | RunSync (IO ()) (ServerCallback (Maybe ThreadId))     -- ^ Request to run a process.  Waits for available resource.  Returns `ThreadId` on success, `Nothing` on timeout.
 
 -- | Type sysnonym of pool manager actor's write-end queue.
 type PoolQueue = Actor PoolMessage
@@ -64,7 +65,7 @@ poolManager workerSvQ maxProcs inbox = do
     Request to run an IO action with pooled process.  Returns 'Async' on
     success.  Returns 'Nothing' if pool is full or process creation timed out.
 -}
-run :: PoolQueue -> IO () -> IO (Maybe (Async ()))
+run :: PoolQueue -> IO () -> IO (Maybe ThreadId)
 run pool action = join <$> call def pool (Run action)
 
 {-|
@@ -72,9 +73,9 @@ run pool action = join <$> call def pool (Run action)
     success.  Wait until resource becomes available.  Returns 'Nothing' on
     timoeout.
 -}
-runSync :: PoolQueue -> IO () -> IO (Maybe (Async ()))
+runSync :: PoolQueue -> IO () -> IO (Maybe ThreadId)
 runSync pool action = join <$> call def pool (RunSync action)
 
 -- | Call runSync with wrapped by 'Async'.  Result (running process) is passed to continuation (callback).
-runAsync :: PoolQueue -> IO () -> (Maybe (Async ()) -> IO a) -> IO (Async a)
+runAsync :: PoolQueue -> IO () -> (Maybe ThreadId -> IO a) -> IO (Async a)
 runAsync pool action cont = async $ runSync pool action >>= cont
