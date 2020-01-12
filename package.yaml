@@ -21,7 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/nshi
 
 dependencies:
 - base >= 4.7 && < 5
-- async-supervisor
+- thread-supervisor
 - unliftio
 
 library:

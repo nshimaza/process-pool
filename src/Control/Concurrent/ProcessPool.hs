@@ -12,7 +12,7 @@ import           Control.Concurrent.Supervisor
 
 {-|
     `PoolMessage` defines all messages for pool manager actor.
-    It follows Server behavior rule from async-supervisor package.
+    It follows Server behavior rule from thread-supervisor package.
 -}
 data PoolMessage
     = ProcDown ExitReason                                   -- ^ Notification on process termination.

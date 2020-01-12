@@ -40,8 +40,8 @@ packages:
 # (e.g., acme-missiles-0.3)
 # extra-deps: []
 extra-deps:
-- git: https://github.com/nshimaza/async-supervisor.git
-  commit: b5bfa8ed02502396b5e077b93486a2a5712270e0
+- git: https://github.com/nshimaza/thread-supervisor.git
+  commit: 62c0713fc05ca01a01f7e612aae10334f160e557
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
