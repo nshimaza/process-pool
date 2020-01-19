@@ -1,6 +1,6 @@
-module Control.Concurrent.ProcessPoolSpec where
+module Control.Concurrent.ThreadPoolSpec where
 
-import           Control.Concurrent.ProcessPool
+import           Control.Concurrent.ThreadPool
 import           Control.Concurrent.Supervisor  hiding (length)
 import           Data.Functor
 import           Data.Maybe

@@ -1,3 +1,3 @@
-# Changelog for process-pool
+# Changelog for thread-pool
 
 ## Unreleased changes

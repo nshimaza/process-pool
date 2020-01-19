@@ -1,6 +1,6 @@
 {-# LANGUAGE Strict #-}
 
-module Control.Concurrent.ProcessPool where
+module Control.Concurrent.ThreadPool where
 
 import           Control.Monad
 import           Data.Default

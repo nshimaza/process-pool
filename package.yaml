@@ -1,10 +1,10 @@
-name:                process-pool
+name:                thread-pool
 version:             0.0.1.0
-github:              "nshimaza/process-pool"
+github:              "nshimaza/thread-pool"
 license:             MIT
 author:              "Naoto Shimazaki"
 maintainer:          "Naoto.Shimazaki@gmail.com"
-copyright:           "2019 Naoto Shimazaki"
+copyright:           "2019,2020 Naoto Shimazaki"
 
 extra-source-files:
 - README.md
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/nshimaza/process-pool#readme>
+description:         Please see the README on GitHub at <https://github.com/nshimaza/thread-pool#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -30,7 +30,7 @@ library:
   - data-default
 
 tests:
-  process-pool-test:
+  thread-pool-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -40,4 +40,4 @@ tests:
     dependencies:
     - hspec
     - QuickCheck
-    - process-pool
+    - thread-pool
