@@ -15,69 +15,66 @@ import           Control.Concurrent.Supervisor
     It follows Server behavior rule from thread-supervisor package.
 -}
 data PoolMessage
-    = ProcDown ExitReason                                   -- ^ Notification on process termination.
-    | Run (IO ()) (ServerCallback (Maybe ThreadId))         -- ^ Request to run a process.  Returns `ThreadId` on success, `Nothing` on supervisor timeout or pool is full.
-    | RunSync (IO ()) (ServerCallback (Maybe ThreadId))     -- ^ Request to run a process.  Waits for available resource.  Returns `ThreadId` on success, `Nothing` on timeout.
+    = Down ExitReason                                       -- ^ Notification on thread termination.
+    | Run (IO ()) (ServerCallback (Maybe ThreadId))         -- ^ Request to run a thread.  Returns `ThreadId` on success, `Nothing` on supervisor timeout or pool is full.
+    | RunSync (IO ()) (ServerCallback (Maybe ThreadId))     -- ^ Request to run a thread.  Waits for available resource.  Returns `ThreadId` on success, `Nothing` on timeout.
 
--- | Type sysnonym of pool manager actor's write-end queue.
+-- | Type synonym of pool manager actor's write-end queue.
 type PoolQueue = Actor PoolMessage
 
--- | Create an actor of process pool
-newProcessPool
-    :: Int                              -- ^ Maximum number of processes runnable at a time.
+-- | Create an actor of thread pool
+newThreadPool
+    :: Int                              -- ^ Maximum number of threads runnable at a time.
     -> IO (Actor PoolMessage, IO ())
-newProcessPool maxProcs = do
-    (workerSvQ, workerSv) <- newActor newSimpleOneForOneSupervisor      -- Supervisor for worker processes.
-    (poolManQ, poolMan) <- newActor $ poolManager workerSvQ maxProcs    -- Actor managing pool.
+newThreadPool maxThreads = do
+    (workerSvQ, workerSv) <- newActor newSimpleOneForOneSupervisor      -- Supervisor for worker threads.
+    (poolManQ, poolMan) <- newActor $ poolManager workerSvQ maxThreads  -- Actor managing pool.
     (_, topSv) <- newActor $ newSupervisor OneForAll def                -- Top level actor.
         [ newChildSpec Permanent workerSv
         , newChildSpec Permanent poolMan]
     pure (poolManQ, topSv)
 
 poolManager :: SupervisorQueue -> Int -> ActorHandler PoolMessage ()
-poolManager workerSvQ maxProcs inbox = do
+poolManager workerSvQ maxThreads inbox = do
     cleanupQueue
-    go maxProcs
+    go maxThreads
   where
     cleanupQueue = tryReceiveSelect isDown inbox >>= go
       where
         go Nothing  = pure ()
         go (Just _) = tryReceiveSelect isDown inbox >>= go
 
-        isDown (ProcDown _) = True
-        isDown _            = False
+        isDown (Down _) = True
+        isDown _        = False
 
     go avail = do
         message <- receiveSelect (dontReceiveQueueOnNoResource avail) inbox
         go =<< case message of
-            (ProcDown _)                        -> pure $ avail + 1
+            (Down _)                            -> pure $ avail + 1
             (Run action cont)   | avail <= 0    -> cont Nothing $> avail
-                                | otherwise     -> (startPocess action >>= cont) $> avail - 1
-            (RunSync action cont)               -> (startPocess action >>= cont) $> avail - 1
+                                | otherwise     -> (startThread action >>= cont) $> avail - 1
+            (RunSync action cont)               -> (startThread action >>= cont) $> avail - 1
 
     dontReceiveQueueOnNoResource avail (RunSync _ _)    | avail <= 0    = False
                                                         | otherwise     = True
     dontReceiveQueueOnNoResource _ _                                    = True
 
-    startPocess action = do
-        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (Actor inbox) $ ProcDown reason) action
+    startThread action = do
+        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (Actor inbox) $ Down reason) action
         newChild def workerSvQ spec
 
-{-|
-    Request to run an IO action with pooled process.  Returns 'Async' on
-    success.  Returns 'Nothing' if pool is full or process creation timed out.
--}
+-- | Request to run an IO action with pooled thread.  Returns 'Async' on
+-- success.  Returns 'Nothing' if pool is full or thread creation timed out.
 run :: PoolQueue -> IO () -> IO (Maybe ThreadId)
 run pool action = join <$> call def pool (Run action)
 
-{-|
-    Request to run an IO action with pooled process.  Returns 'Async' on
-    success.  Wait until resource becomes available.  Returns 'Nothing' on
-    timoeout.
--}
+-- | Request to run an IO action with pooled thread.  Returns 'Async' on
+-- success.  Wait until resource becomes available.  Returns 'Nothing' on
+-- timeout.
 runSync :: PoolQueue -> IO () -> IO (Maybe ThreadId)
 runSync pool action = join <$> call def pool (RunSync action)
 
--- | Call runSync with wrapped by 'Async'.  Result (running process) is passed to continuation (callback).
+-- | Call runSync with wrapped by 'Async'.  Result (running thread) is passed to
+-- continuation (callback).
 runAsync :: PoolQueue -> IO () -> (Maybe ThreadId -> IO a) -> IO (Async a)
 runAsync pool action cont = async $ runSync pool action >>= cont

@@ -15,21 +15,21 @@ import           UnliftIO
 spec :: Spec
 spec = do
     describe "Run" $ do
-        it "does not start process when pool size is zero" $ do
-            (poolQ, pool) <- newProcessPool 0
+        it "does not start thread when pool size is zero" $ do
+            (poolQ, pool) <- newThreadPool 0
             withAsync pool $ \_ -> do
                 maybeAsync <- run poolQ $ pure ()
                 isNothing maybeAsync `shouldBe` True
 
-        prop "does not start process when pool size is negative" $ \(Positive n) -> do
-            (poolQ, pool) <- newProcessPool (-n)
+        prop "does not start thread when pool size is negative" $ \(Positive n) -> do
+            (poolQ, pool) <- newThreadPool (-n)
             withAsync pool $ \_ -> do
                 maybeAsync <- run poolQ $ pure ()
                 isNothing maybeAsync `shouldBe` True
 
-        prop "starts a temporary process only when pool reosurce is available" $ \(Positive poolSize) ->
+        prop "starts a temporary thread only when pool resource is available" $ \(Positive poolSize) ->
             forAll (choose (1, 100)) $ \overshoot -> do
-            (poolQ, pool) <- newProcessPool poolSize
+            (poolQ, pool) <- newThreadPool poolSize
             withAsync pool $ \_ -> do
                 results <- for [1 .. (poolSize + overshoot)] $ \index -> do
                     trigger <- newEmptyMVar
@@ -43,17 +43,17 @@ spec = do
                         readMVar blocker
                         pure ()
                     pure (maybeAsync, trigger, mark, blocker, var)
-                let successfuls = filter (\(maybeAsync, _, _, _, _) -> isJust maybeAsync) results
-                length successfuls `shouldBe` poolSize
-                vars <- for successfuls (\(_, _, _, _, var) -> readTVarIO var)
+                let successfulResults = filter (\(maybeAsync, _, _, _, _) -> isJust maybeAsync) results
+                length successfulResults `shouldBe` poolSize
+                vars <- for successfulResults (\(_, _, _, _, var) -> readTVarIO var)
                 all isNothing vars `shouldBe` True
-                vars2 <- for  successfuls (\(_, trigger, mark, _, var) -> putMVar trigger () *> readMVar mark *> readTVarIO var)
+                vars2 <- for  successfulResults (\(_, trigger, mark, _, var) -> putMVar trigger () *> readMVar mark *> readTVarIO var)
                 vars2 `shouldBe` map Just [1 .. poolSize]
 
     describe "Sync" $ do
-        prop "starts a temporary process when pool reosurce is available" $ \(Positive numRequest) ->
+        prop "starts a temporary thread when pool resource is available" $ \(Positive numRequest) ->
             forAll (choose (1, 100)) $ \headroom -> do
-            (poolQ, pool) <- newProcessPool (numRequest + headroom)
+            (poolQ, pool) <- newThreadPool (numRequest + headroom)
             withAsync pool $ \_ -> do
                 results <- for [1 .. numRequest] $ \index -> do
                     trigger <- newEmptyMVar
