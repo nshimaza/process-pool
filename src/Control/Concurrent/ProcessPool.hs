@@ -30,8 +30,8 @@ newProcessPool maxProcs = do
     (workerSvQ, workerSv) <- newActor newSimpleOneForOneSupervisor      -- Supervisor for worker processes.
     (poolManQ, poolMan) <- newActor $ poolManager workerSvQ maxProcs    -- Actor managing pool.
     (_, topSv) <- newActor $ newSupervisor OneForAll def                -- Top level actor.
-        [ newProcessSpec Permanent $ noWatch workerSv
-        , newProcessSpec Permanent $ noWatch poolMan]
+        [ newChildSpec Permanent workerSv
+        , newChildSpec Permanent poolMan]
     pure (poolManQ, topSv)
 
 poolManager :: SupervisorQueue -> Int -> ActorHandler PoolMessage ()
@@ -60,7 +60,7 @@ poolManager workerSvQ maxProcs inbox = do
     dontReceiveQueueOnNoResource _ _                                    = True
 
     startPocess action = do
-        let spec = newProcessSpec Temporary $ watch (\reason _ -> send (Actor inbox) $ ProcDown reason) action
+        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (Actor inbox) $ ProcDown reason) action
         newChild def workerSvQ spec
 
 {-|
