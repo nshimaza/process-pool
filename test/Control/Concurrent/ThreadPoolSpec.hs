@@ -1,7 +1,7 @@
 module Control.Concurrent.ThreadPoolSpec where
 
+import           Control.Concurrent.Supervisor hiding (length)
 import           Control.Concurrent.ThreadPool
-import           Control.Concurrent.Supervisor  hiding (length)
 import           Data.Functor
 import           Data.Maybe
 import           Data.Traversable
