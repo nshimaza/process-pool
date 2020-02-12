@@ -16,20 +16,20 @@ spec :: Spec
 spec = do
     describe "Run" $ do
         it "does not start thread when pool size is zero" $ do
-            (poolQ, pool) <- newThreadPool 0
+            Actor poolQ pool <- newThreadPool 0
             withAsync pool $ \_ -> do
                 maybeAsync <- run poolQ $ pure ()
                 isNothing maybeAsync `shouldBe` True
 
         prop "does not start thread when pool size is negative" $ \(Positive n) -> do
-            (poolQ, pool) <- newThreadPool (-n)
+            Actor poolQ pool <- newThreadPool (-n)
             withAsync pool $ \_ -> do
                 maybeAsync <- run poolQ $ pure ()
                 isNothing maybeAsync `shouldBe` True
 
         prop "starts a temporary thread only when pool resource is available" $ \(Positive poolSize) ->
             forAll (choose (1, 100)) $ \overshoot -> do
-            (poolQ, pool) <- newThreadPool poolSize
+            Actor poolQ pool <- newThreadPool poolSize
             withAsync pool $ \_ -> do
                 results <- for [1 .. (poolSize + overshoot)] $ \index -> do
                     trigger <- newEmptyMVar
@@ -53,7 +53,7 @@ spec = do
     describe "Sync" $ do
         prop "starts a temporary thread when pool resource is available" $ \(Positive numRequest) ->
             forAll (choose (1, 100)) $ \headroom -> do
-            (poolQ, pool) <- newThreadPool (numRequest + headroom)
+            Actor poolQ pool <- newThreadPool (numRequest + headroom)
             withAsync pool $ \_ -> do
                 results <- for [1 .. numRequest] $ \index -> do
                     trigger <- newEmptyMVar

@@ -20,19 +20,19 @@ data PoolMessage
     | RunSync (IO ()) (ServerCallback (Maybe ThreadId))     -- ^ Request to run a thread.  Waits for available resource.  Returns `ThreadId` on success, `Nothing` on timeout.
 
 -- | Type synonym of pool manager actor's write-end queue.
-type PoolQueue = Actor PoolMessage
+type PoolQueue = ActorQ PoolMessage
 
 -- | Create an actor of thread pool
 newThreadPool
     :: Int                              -- ^ Maximum number of threads runnable at a time.
-    -> IO (Actor PoolMessage, IO ())
+    -> IO (Actor PoolMessage ())
 newThreadPool maxThreads = do
-    (workerSvQ, workerSv) <- newActor newSimpleOneForOneSupervisor      -- Supervisor for worker threads.
-    (poolManQ, poolMan) <- newActor $ poolManager workerSvQ maxThreads  -- Actor managing pool.
-    (_, topSv) <- newActor $ newSupervisor OneForAll def                -- Top level actor.
+    Actor workerSvQ workerSv <- newActor newSimpleOneForOneSupervisor       -- Supervisor for worker threads.
+    Actor poolManQ poolMan <- newActor $ poolManager workerSvQ maxThreads   -- Actor managing pool.
+    Actor _ topSv <- newActor $ newSupervisor OneForAll def                 -- Top level actor.
         [ newChildSpec Permanent workerSv
         , newChildSpec Permanent poolMan]
-    pure (poolManQ, topSv)
+    pure $ Actor poolManQ topSv
 
 poolManager :: SupervisorQueue -> Int -> ActorHandler PoolMessage ()
 poolManager workerSvQ maxThreads inbox = do
@@ -60,7 +60,7 @@ poolManager workerSvQ maxThreads inbox = do
     dontReceiveQueueOnNoResource _ _                                    = True
 
     startThread action = do
-        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (Actor inbox) $ Down reason) action
+        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (ActorQ inbox) $ Down reason) action
         newChild def workerSvQ spec
 
 -- | Request to run an IO action with pooled thread.  Returns 'Async' on
