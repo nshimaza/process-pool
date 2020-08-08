@@ -21,7 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/nshi
 
 dependencies:
 - base >= 4.7 && < 5
-- thread-supervisor
+- thread-supervisor >= 0.2
 - unliftio
 
 library:
@@ -37,6 +37,8 @@ tests:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    build-tools:
+    - hspec-discover
     dependencies:
     - hspec
     - QuickCheck

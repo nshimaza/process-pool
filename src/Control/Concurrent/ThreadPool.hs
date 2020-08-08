@@ -60,7 +60,7 @@ poolManager workerSvQ maxThreads inbox = do
     dontReceiveQueueOnNoResource _ _                                    = True
 
     startThread action = do
-        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> send (ActorQ inbox) $ Down reason) action
+        let spec = newMonitoredChildSpec Temporary $ watch (\reason _ -> sendToMe inbox $ Down reason) action
         newChild def workerSvQ spec
 
 -- | Request to run an IO action with pooled thread.  Returns 'Async' on
