@@ -1,0 +1,41 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+        ghc: ['8.6', '8.8', '8.10']
+        exclude:
+          - os: windows-latest
+            ghc: 8.8
+
+    name: ${{ matrix.os }} GHC ${{ matrix.ghc }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup Haskell
+      uses: actions/setup-haskell@v1.1.2
+      with:
+        ghc-version: ${{ matrix.ghc }}
+        enable-stack: true
+        stack-version: 'latest'
+
+    - name: Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.stack
+        key: ${{ runner.os }}-stack
+        restore-keys: ${{ runner.os }}-stack
+
+    - name: Build
+      run: stack build --test --bench --no-run-tests --no-run-benchmarks
+    - name: Run tests
+      run: stack test
