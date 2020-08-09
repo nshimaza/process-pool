@@ -29,7 +29,11 @@ jobs:
         path: ~/.stack
         key: ${{ runner.os }}-${{ hashFiles('**/*.cabal', '**/*.yaml', '**/stack.yaml.lock') }}
 
+    - name: Delete setup-exe-cache
+      if: ${{ runner.os == 'macOS' }}
+      run: rm -fr ~/.stack/setup-exe-cache ~/.stack/setup-exe-src
+
     - name: Build
-      run: stack build --test --bench --no-run-tests --no-run-benchmarks
+      run: stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
     - name: Run tests
-      run: stack test
+      run: stack test --system-ghc
